@@ -1,0 +1,299 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" >
+        <meta name="description" content="简易的别踩白块小游戏">
+        <meta name="author" content="贾城昊">
+        <link rel="icon" type="image/x-icon" href="https://teacher.solid.things.ac.cn:7243/private/exp/web/2021k8009929010/code/b4.png">
+        <title>简易的别踩白块小游戏</title>
+        <style>
+            div.game{
+                width: 408px;
+                height: 408px;
+                border: 2px solid gray;
+                margin: 0 auto;
+                background-color: white;
+                overflow: hidden;
+            }
+
+            h1{
+                text-align: center;
+            }
+
+            h2{
+                text-align: center;
+            }
+
+            p{
+                text-align: center;
+            }
+
+            #con{
+                width: 100%;
+                height: 400px;
+                top: -408px;
+                position: relative;
+                border-collapse: collapse;
+            }
+
+            div.buttons{
+                width: 100%;
+                text-align: center;
+            }
+
+            button.start{
+                margin: 20px auto;
+                width: 150px;
+                height: 50px;
+                color: rgb(255,255,255);
+                background:yellowgreen;
+                border-radius: 10px;
+                line-height: 50px;
+            }
+
+            .cell{
+                height: 100px;
+                width: 100px;
+                float: left;
+                border: 1px solid rgb(55,75,130);
+            }
+
+            .row{
+                height: 100px;
+                width: 100%;
+            }
+
+            .black{
+                background: black;
+            }
+
+            p.help{
+                text-align: center;
+                color: red;
+            }
+
+            body{
+                background-image:url(背景.webp);
+                background-repeat: repeat;
+                background-size: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>score</h2>
+        <h2 class="score">0</h2>
+        <p>历史最高分:<span id="best">0</span></p>
+        <div class="game">
+            <div id="con"></div>
+        </div>
+        <div class="buttons">
+            <button class="start" onclick="start()">开始游戏</button>
+        </div>
+        <div>
+            <p class="help"><strong>帮助:</strong>可以使用鼠标点击，也可以使用键盘操纵</p>
+            <p class="help">使用键盘时:1,2,3,4四个按键分别代表第1,2,3,4个格子</p>
+        </div>
+        <script>
+            var clock=null;
+            var state=0;
+            var speed=6;
+            var started=false;
+
+            function Randomint(min,max){
+                var i=Math.random()*(max-min+1);
+                var num=min-1+Math.floor(i);
+                return num;
+            }
+
+            function creatediv(name){
+                var div=document.createElement("div");
+                div.className=name;
+                return div;
+            }
+
+            function createrow(){
+                var con=document.getElementById('con');
+                var row=creatediv('row')
+                row.over=false;
+                var cells=createcell();
+                con.appendChild(row);
+
+                for(var i=0;i<4;i++){
+                    row.appendChild(creatediv(cells[i]))
+                }
+
+                if(con.firstChild==null){
+                    con.appendChild(row);
+                }
+                else{
+                    con.insertBefore(row,con.firstChild)
+                }
+            }
+
+            function delete_row(){
+                var con=document.getElementById('con');
+                if(con.childNodes.length==6){
+                    con.removeChild(con.lastChild);
+                }
+            }
+
+            function createcell(){
+                var cells=['cell','cell','cell','cell'];
+                var rand=Randomint(1,4);
+                cells[rand]='cell black';
+                return cells;
+            }
+
+            function start(){
+                if(started){
+                    alert('游戏已经开始，请不要重复点击按钮')
+                }
+                else{
+                    init()
+                }
+            }
+
+            function gameonclick(ev){
+                ev=ev || event;
+                judge(ev);
+            }
+
+            function gamekeydown(ev){
+                ev=ev || event;
+                let keycode=ev.keyCode;
+                if(keycode==49||keycode==50||keycode==51||keycode==52||keycode==97||keycode==98||keycode==99||keycode==100){
+                    var index=-1;
+                    if(keycode==49||keycode==50||keycode==51||keycode==52){
+                        index=keycode-49;
+                    }
+                    else{
+                        index=keycode-97;
+                    }
+                    var con=document.getElementById('con');
+                    if(con.firstChild!==null){
+                        var childs=con.children;
+                        for(i=childs.length-1;i>=0;i--){
+                            if(!childs[i].over){
+                                childs[i].over=true;
+                                var row_cells=childs[i].children;
+                                var target_cell=row_cells[index];
+                                if(target_cell.className.indexOf('black') == -1 &&
+                                    target_cell.className.indexOf('cell')!== -1
+                                ){
+                                    target_cell.parentNode.click_w=true;
+                                }
+
+                                if(target_cell.className.indexOf('black')!== -1){
+                                    target_cell.className='cell';
+                                    target_cell.parentNode.click_b=true;
+                                    score();
+                                }
+
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function init(){
+                started=true;
+                for(var i=0;i<4;i++){
+                    createrow();
+                }
+
+                document.getElementsByClassName('game')[0].onclick=gameonclick;
+                document.addEventListener("keydown",gamekeydown);
+                clock=window.setInterval('move()',30);
+            }
+
+            function judge(ev){
+                var element=ev.target;
+                if(element.className.indexOf('black') == -1 &&
+                    element.className.indexOf('cell')!== -1
+                ){
+                    element.parentNode.click_w=true;
+                    element.parentNode.over=true;
+                }
+
+                if(element.className.indexOf('black')!== -1){
+                    element.className='cell';
+                    element.parentNode.click_b=true;
+                    element.parentNode.over=true;
+                    score();
+                }
+            }
+
+            function move(){
+                var con=document.getElementById('con');
+                var top=window.getComputedStyle(con,null).getPropertyValue('top');
+                var _top=parseInt(top);
+                if(_top + speed>0){
+                    _top=0;
+                }
+                else{
+                    _top+=speed;
+                }
+
+                con.style.top=_top+'px';
+                gameover();
+
+                if(_top==0){
+                    createrow();
+                    con.style.top='-102px';
+                    delete_row();
+                }
+            }
+
+            function gameover(){
+                var row_s=con.childNodes;
+                if(row_s.length==5 && !row_s[row_s.length-1].click_b){
+                    fail();
+                }
+                for(let i=0; i<row_s.length;i++){
+                    if(row_s[i].click_w){
+                        fail();
+                    }
+                }
+            }
+
+            function fail(){
+                clearInterval(clock);
+                var score=document.getElementsByClassName('score')[0];
+                var nowscore=parseInt(score.innerHTML,10);
+                confirm("你的得分是"+ nowscore);
+                started=false;
+                speed=6;
+
+                var span_best=document.getElementById("best");
+                var best_score=parseInt(span_best.innerHTML,10);
+                if(nowscore>best_score){
+                    best_score=nowscore;
+                }
+                span_best.innerHTML=best_score;
+
+                var con=document.getElementById('con');
+                con.innerHTML='';
+                score.innerHTML=0;
+                con.style.top='-408px';
+            }
+
+            function speed_up(){
+                speed+=1;
+                if(speed==40){
+                    alert("legendary!");
+                }
+            }
+
+            function score(){
+                var score=document.getElementsByClassName('score')[0];
+                var new_score=parseInt(score.innerHTML,10)+1;
+                score.innerHTML=new_score;
+
+                if(new_score % 10==0){
+                    speed_up()
+                }
+            }
+        </script>
+    </body>    
+</html>
